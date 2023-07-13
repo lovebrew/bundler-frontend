@@ -1,10 +1,10 @@
-import './App.css'
-import MainLogo from "./Components/MainLogo"
-import Footer from "./Components/Footer"
-import CustomModal from "./Components/CustomModal"
+import './App.css';
+import MainLogo from "./Components/MainLogo";
+import Footer from "./Components/Footer";
+import TutorialModal from "./Components/TutorialModal";
+import ConfigEditor from './Components/ConfigButton';
 
 import { createTheme, ThemeProvider } from "@mui/material";
-import BasicModal from './Components/CustomModal';
 
 const theme = createTheme({
     palette: {
@@ -18,7 +18,8 @@ function App() {
     return (
         <ThemeProvider theme={theme}>
             <MainLogo />
-            <BasicModal />
+            <TutorialModal />
+            <ConfigEditor />
             <Footer />
         </ThemeProvider>
     )
