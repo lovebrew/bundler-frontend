@@ -1,11 +1,14 @@
 import './App.css'
 import MainLogo from "./Components/MainLogo"
 import Footer from "./Components/Footer"
-import {createTheme, ThemeProvider} from "@mui/material";
+import CustomModal from "./Components/CustomModal"
+
+import { createTheme, ThemeProvider } from "@mui/material";
+import BasicModal from './Components/CustomModal';
 
 const theme = createTheme({
-    palette:{
-        mode:'dark'
+    palette: {
+        mode: 'dark'
     }
 })
 
@@ -14,7 +17,8 @@ function App() {
 
     return (
         <ThemeProvider theme={theme}>
-            <MainLogo/>
+            <MainLogo />
+            <BasicModal />
             <Footer />
         </ThemeProvider>
     )
