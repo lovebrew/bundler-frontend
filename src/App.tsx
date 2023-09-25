@@ -1,26 +1,11 @@
-import './App.css'
-import MainLogo from "./Components/MainLogo"
-import Footer from "./Components/Footer"
-import AlertDialog from "./Components/CustomModal"
-
-import { createTheme, ThemeProvider } from "@mui/material";
-
-const theme = createTheme({
-    palette: {
-        mode: 'dark'
-    }
-})
-
+import Flask from "@/src/components/Flask";
 
 function App() {
-
-    return (
-        <ThemeProvider theme={theme}>
-            <MainLogo />
-            <AlertDialog />
-            <Footer />
-        </ThemeProvider>
-    )
+  return (
+    <>
+      <Flask />
+    </>
+  );
 }
 
-export default App
+export default App;
