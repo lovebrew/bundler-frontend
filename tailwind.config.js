@@ -3,6 +3,10 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      dropShadow: {
+        flask: "8px 4px 4px rgba(0, 0, 0, 0.25)",
+        footer: "0px -4px 4px rgba(0, 0, 0, 0.25)",
+      },
       keyframes: {
         potionAppear: {
           "0%": {
@@ -29,7 +33,10 @@ export default {
         },
       },
       animation: {
-        potionAppear: "potionAppear 2s ease-out 0s 1",
+        potionAppear: "potionAppear 1s ease-out 0s 1",
+      },
+      fontFamily: {
+        coolvetica: ["coolvetica"],
       },
     },
   },

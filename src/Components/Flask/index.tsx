@@ -4,16 +4,28 @@ import Logo from "@/src/assets/logo.svg";
 const FlaskImage = tw.img`
 max-w-full
 max-h-full
-h-4/5
 aspect-square
 object-contain
 flex-auto
-drop-shadow-lg
+drop-shadow-flask
 animate-potionAppear
 `;
 
+const FlaskContainer = tw.div`
+flex
+overflow-hidden 
+w-full
+max-h-full
+min-h-[80%]
+grow
+`;
+
 function Flask() {
-  return <FlaskImage src={Logo} />;
+  return (
+    <FlaskContainer>
+      <FlaskImage src={Logo} />
+    </FlaskContainer>
+  );
 }
 
 export default Flask;
