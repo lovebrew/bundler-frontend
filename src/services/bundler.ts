@@ -2,7 +2,7 @@ import JSZip from "jszip";
 
 const MAX_FILE_SIZE = 0x2000000; //32MB
 
-export function validateZip(file: File): Promise<string> {
+export function validateZip(file: File): Promise<string | void> {
   const jszip = new JSZip();
   return new Promise((resolve, reject) => {
     if (file.size > MAX_FILE_SIZE) {
@@ -15,7 +15,7 @@ export function validateZip(file: File): Promise<string> {
         if (zip.files["lovebrew.toml"] === undefined) {
           reject("Missing configuration file");
         } else {
-          resolve("");
+          resolve();
         }
       })
       .catch(() => {
