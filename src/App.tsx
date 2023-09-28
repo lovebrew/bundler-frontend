@@ -8,23 +8,55 @@ function App() {
     const archive = files[0];
     const valid = validateZip(archive);
     if (!valid) {
-      toast("Invalid archive. Refer to the documentation");
+      toast.error("Invalid archive. Refer to the documentation");
     }
 
     //start uploading toast
-    sendZip(archive)
-      .then((response) => {
-        console.log();
-        //download the thing and complete the toast
-        toast(response.message);
-      })
-      .catch((error) => {
-        toast(error);
-      });
+    const gamePromise = sendZip(archive);
+    toast.promise(gamePromise, {
+      loading: "Uploading",
+      success: (response) => {
+        toast.promise(response.file as Promise<Blob>, {
+          loading: "Downloading",
+          success: (blob) => {
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `bundle-${+new Date()}.zip`;
+            link.click();
+            window.URL.revokeObjectURL(link.href);
+            return "Downloaded";
+          },
+          error: "Something went wrong 😔",
+        });
+        return response.message;
+      },
+      error: (error) => {
+        return `Error! ${error.status} [${error.message}]`;
+      },
+    });
   };
   return (
     <>
-      <Toaster />
+      <Toaster
+        toastOptions={{
+          className: `
+          bg-neutral-800
+          text-white
+          `,
+          success: {
+            className: `
+            bg-green-600
+            text-white
+            `,
+          },
+          error: {
+            className: `
+            bg-red-600
+            text-white
+            `,
+          },
+        }}
+      />
       <Flask uploadHandler={handleUpload} />
       <Footer />
     </>
