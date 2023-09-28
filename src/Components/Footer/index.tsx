@@ -5,7 +5,6 @@ flex
 p-3
 bg-neutral-800
 flex-row
-max-sm:flex-col
 max-sm:text-base
 content-center
 justify-center
@@ -17,10 +16,7 @@ gap-1
 drop-shadow-footer
 `;
 
-const Spacer = tw.span`
-px-2
-max-sm:hidden
-`;
+const Spacer = () => <span className="px-1">•</span>;
 
 type LinkProps = {
   icon: string;
@@ -30,12 +26,12 @@ type LinkProps = {
 
 function Link(props: LinkProps) {
   return (
-    <span>
-      <i className={`${props.icon} px-1`}></i>
-      {(props.href === undefined && <span>{props.children}</span>) || (
-        <a href={props.href}>{props.children}</a>
-      )}
-    </span>
+    <a href={props.href} className="px-1">
+      <i className={`${props.icon} pr-2`}></i>
+      <span className={`${props.href !== undefined && "max-sm:hidden"}`}>
+        {props.children}
+      </span>
+    </a>
   );
 }
 
@@ -48,21 +44,21 @@ function Footer() {
       >
         LÖVE Potion
       </Link>
-      <Spacer>•</Spacer>
+      <Spacer />
       <Link
         icon="fa-brands fa-github"
         href="https://github.com/lovebrew/lovebrew-webserver"
       >
         Source code
       </Link>
-      <Spacer>•</Spacer>
+      <Spacer />
       <Link
         icon="fa-brands fa-paypal"
         href="https://paypal.me/TurtleP?country.x=US&locale.x=en_US"
       >
         Donate
       </Link>
-      <Spacer>•</Spacer>
+      <Spacer />
       <Link icon="fa-regular fa-copyright">LÖVEBrew Team</Link>
     </FooterContainer>
   );
