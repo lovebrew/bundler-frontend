@@ -28,6 +28,7 @@ function App() {
           loading: "Downloading",
           success: (blob) => {
             playSuccess();
+            playSuccess();
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
             link.download = `bundle-${+new Date()}.zip`;
@@ -40,6 +41,7 @@ function App() {
         return response.message;
       },
       error: (error) => {
+        playError();
         playError();
         return `Error! ${error.status} [${error.message}]`;
       },
