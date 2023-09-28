@@ -1,13 +1,30 @@
-// TODO: Validate archive
-export function validateZip(file: File): boolean {
-  if (file) {
-    return true;
-  } else {
-    return false;
-  }
+import JSZip from "jszip";
+
+const MAX_FILE_SIZE = 0x2000000; //32MB
+
+export function validateZip(file: File): Promise<string> {
+  const jszip = new JSZip();
+  return new Promise((resolve, reject) => {
+    if (file.size > MAX_FILE_SIZE) {
+      reject("Your archive is too big!");
+      return;
+    }
+    jszip
+      .loadAsync(file)
+      .then((zip: JSZip) => {
+        if (zip.files["lovebrew.toml"] === undefined) {
+          reject("Missing configuration file");
+        } else {
+          resolve("");
+        }
+      })
+      .catch(() => {
+        resolve("Invalid archive. Refer to the documentation.");
+      });
+  });
 }
 
-interface BundlerResponse {
+export interface BundlerResponse {
   message: string;
   status: number;
   file?: Promise<Blob>;

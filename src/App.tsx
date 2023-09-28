@@ -1,6 +1,6 @@
 import Flask from "@components/Flask";
 import Footer from "@components/Footer";
-import { validateZip, sendZip } from "./services/bundler";
+import { validateZip, sendZip, BundlerResponse } from "./services/bundler";
 import { Toaster, toast } from "react-hot-toast";
 import successSfx from "@assets/sound/success.ogg";
 import errorSfx from "@assets/sound/error.ogg";
@@ -12,39 +12,47 @@ import useSound from "use-sound";
 function App() {
   const [playSuccess] = useSound(successSfx);
   const [playError] = useSound(errorSfx);
-  const handleUpload = (files: File[]) => {
+
+  const handleUploadSuccess = (response: BundlerResponse) => {
+    toast.promise(response.file as Promise<Blob>, {
+      loading: "Downloading",
+      success: (blob) => {
+        playSuccess();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `bundle-${+new Date()}.zip`;
+        link.click();
+        window.URL.revokeObjectURL(link.href);
+        return "Downloaded";
+      },
+      error: "Something went wrong 😔",
+    });
+    return response.message;
+  };
+
+  const handleUploadError = (error: BundlerResponse) => {
+    playError();
+    return `Error! ${error.status} [${error.message}]`;
+  };
+
+  const handleUpload = async (files: File[]) => {
     const archive = files[0];
-    const valid = validateZip(archive);
-    if (!valid) {
-      toast.error("Invalid archive. Refer to the documentation");
+
+    try {
+      await validateZip(archive);
+    } catch (reason) {
+      if (typeof reason === "string") {
+        toast.error(reason);
+      } else {
+        toast.error("Unknown error");
+      }
+      return;
     }
 
-    //start uploading toast
-    const gamePromise = sendZip(archive);
-    toast.promise(gamePromise, {
+    toast.promise(sendZip(archive), {
       loading: "Uploading",
-      success: (response) => {
-        toast.promise(response.file as Promise<Blob>, {
-          loading: "Downloading",
-          success: (blob) => {
-            playSuccess();
-            playSuccess();
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `bundle-${+new Date()}.zip`;
-            link.click();
-            window.URL.revokeObjectURL(link.href);
-            return "Downloaded";
-          },
-          error: "Something went wrong 😔",
-        });
-        return response.message;
-      },
-      error: (error) => {
-        playError();
-        playError();
-        return `Error! ${error.status} [${error.message}]`;
-      },
+      success: handleUploadSuccess,
+      error: handleUploadError,
     });
   };
 
