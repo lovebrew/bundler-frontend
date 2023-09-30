@@ -16,9 +16,6 @@ jobs:
         node-version: [18.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
-    permissions:
-      contents: write
-
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
@@ -34,5 +31,6 @@ jobs:
         uses: Nawias/gha-publish-to-git@master
         with:
           branch: dist
-          github_pat: "${{ secrets.DEPLOY_TOKEN  }}"
+          github_token: "${{ secrets.GITHUB_TOKEN  }}"
+          github_pat: "${{ secrets.GITHUB_TOKEN }}"
           source_folder: dist
