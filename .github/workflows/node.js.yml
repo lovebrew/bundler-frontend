@@ -31,6 +31,5 @@ jobs:
         uses: Nawias/gha-publish-to-git@master
         with:
           branch: dist
-          github_token: "${{ secrets.GITHUB_TOKEN  }}"
-          github_pat: "${{ secrets.GITHUB_TOKEN }}"
+          github_pat: "${{ secrets.DEPLOY_TOKEN }}"
           source_folder: dist
