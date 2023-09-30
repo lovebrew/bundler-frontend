@@ -34,5 +34,5 @@ jobs:
         uses: Nawias/gha-publish-to-git@master
         with:
           branch: dist
-          github_token: "${{ secrets.GITHUB_TOKEN  }}"
+          github_token: "${{ secrets.DEPLOY_TOKEN  }}"
           source_folder: dist
