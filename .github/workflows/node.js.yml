@@ -26,7 +26,8 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test --if-present
-      - uses: seanmiddleditch/gha-publish-to-git@master
+      - name: publish-to-git
+        uses: seanmiddleditch/gha-publish-to-git@v2
         with:
           branch: dist
           github_token: "${{ secrets.GITHUB_TOKEN  }}"
