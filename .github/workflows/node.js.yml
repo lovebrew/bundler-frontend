@@ -27,7 +27,8 @@ jobs:
       - run: npm run build
       - run: npm test --if-present
       - name: publish-to-git
-        uses: MrYuion/gha-publish-to-git@master
+        #fork of seanmiddleditch/gha-publish-to-git
+        uses: Nawias/gha-publish-to-git@master
         with:
           branch: dist
           github_token: "${{ secrets.GITHUB_TOKEN  }}"
