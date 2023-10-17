@@ -43,11 +43,9 @@ const DropZone = tw.div<DropZoneProps>`
 `;
 
 const FileInput = tw.input`
-  absolute
-  top-0
-  right-0
-  left-0
-  bottom-0
+  relative
+  h-full
+  w-full
   opacity-0
 `;
 
