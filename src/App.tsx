@@ -25,7 +25,10 @@ function App() {
         window.URL.revokeObjectURL(link.href);
         return "Downloaded";
       },
-      error: "Something went wrong 😔",
+      error: () => {
+        playError();
+        return "Something went wrong 😔";
+      },
     });
     return response.message;
   };
@@ -41,6 +44,7 @@ function App() {
     try {
       await validateZip(archive);
     } catch (reason) {
+      playError();
       if (typeof reason === "string") {
         toast.error(reason);
       } else {
