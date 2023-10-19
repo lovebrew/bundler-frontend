@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 
-const MAX_FILE_SIZE = 0x2000000; //32MB
+const MAX_FILE_SIZE = 0x10000000; // 256MB
 
 export function validateZip(file: File): Promise<string | void> {
   const jszip = new JSZip();
