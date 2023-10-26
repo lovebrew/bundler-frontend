@@ -20,15 +20,16 @@ export default class ImageMediaConverter extends MediaConverter {
   }
   async convert(files: MediaFile[]): Promise<MediaFile[]> {
     const body = new FormData();
+
     for (const file of files) {
-      await this.checkImage(file.data).then((isValid: boolean) => {
-        if (!isValid) {
-          throw Error("not an image");
-        } else {
-          body.append(file.filepath, file.data);
-        }
-      });
+      if (!(await this.checkImage(file.data))) {
+        throw Error("not an image");
+      } else {
+        body.append(file.filepath, file.data);
+      }
     }
+
+    console.log(body);
     const url = `${process.env.BASE_URL}${this.path}`;
     console.log(url);
     const request = fetch(url, {
@@ -40,6 +41,6 @@ export default class ImageMediaConverter extends MediaConverter {
     if (!this.isMediaResponse(response)) {
       throw Error("invalid data");
     }
-    return this.responseToMediaFileArray(response);
+    return this.responseToMediaFileArray(response, "image/t3x");
   }
 }

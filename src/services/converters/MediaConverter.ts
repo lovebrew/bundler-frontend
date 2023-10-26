@@ -1,5 +1,8 @@
 export type MediaResponse = Array<MediaResponseFile>;
-export type MediaResponseFile = { data: string; filepath: string };
+export type MediaResponseFile = {
+  data: string;
+  filepath: string;
+};
 export type MediaFile = { data: Blob; filepath: string };
 
 export default abstract class MediaConverter {
@@ -27,12 +30,13 @@ export default abstract class MediaConverter {
     );
   }
   protected responseToMediaFileArray(
-    response: MediaResponse
+    response: MediaResponse,
+    type: string
   ): Promise<MediaFile[]> {
     return Promise.all<MediaFile>(
       response.map((file: MediaResponseFile): Promise<MediaFile> => {
         return new Promise<MediaFile>((resolve, reject) => {
-          fetch(file.data)
+          fetch(`data:${type};base64,${file.data}`)
             .then((res) => res.blob())
             .then((data) => {
               resolve({ filepath: file.filepath, data });
