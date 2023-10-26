@@ -49,9 +49,12 @@ const FileInput = tw.input`
   opacity-0
 `;
 
-type FlaskProps = { uploadHandler: (a: File[]) => void };
+type FlaskProps = {
+  uploadHandler: (a: File[]) => void;
+  accept: string | string[];
+};
 
-function Flask({ uploadHandler }: FlaskProps) {
+function Flask({ uploadHandler, accept }: FlaskProps) {
   const [isDragActive, setDragActive] = useState<boolean>(false);
 
   const handleDragEnter = () => {
@@ -76,6 +79,10 @@ function Flask({ uploadHandler }: FlaskProps) {
     fileEvent.target.value = "";
   };
 
+  if (Array.isArray(accept)) {
+    accept = accept.reduce((a, b) => `${a},${b}`);
+  }
+
   return (
     <FlaskContainer>
       <FlaskImage src={Logo} />
@@ -83,7 +90,7 @@ function Flask({ uploadHandler }: FlaskProps) {
         <FileInput
           type="file"
           title=""
-          accept=".zip"
+          accept={accept}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
