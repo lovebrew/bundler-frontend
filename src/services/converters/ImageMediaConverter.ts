@@ -11,10 +11,14 @@ export default class ImageMediaConverter extends MediaConverter {
     const body = new FormData();
 
     for (const file of files) {
-      if (!(await this.checkImage(file.data))) {
-        throw Error(`Image ${file.filepath} is too large!`);
-      } else {
-        body.append(file.filepath, file.data);
+      try {
+        if (!(await this.checkImage(file.data))) {
+          throw Error(`Image ${file.filepath} is too large!`);
+        } else {
+          body.append(file.filepath, file.data);
+        }
+      } catch (error) {
+        throw Error(`Image ${file.filepath} is invalid!`);
       }
     }
 

@@ -58,13 +58,11 @@ function App() {
 
   const handleUpload = async (files: File[]) => {
     let converter: MediaConverter | undefined;
-    console.log(files[0].type);
     if (isImageFile(files[0])) {
       converter = imageConverter;
     } else if (isFontFile(files[0])) {
       converter = fontConverter;
     }
-    console.log(converter);
     if (converter !== undefined) {
       toast.promise(
         converter.convert(
