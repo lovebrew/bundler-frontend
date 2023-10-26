@@ -3,27 +3,16 @@ import MediaConverter, { MediaFile } from "./MediaConverter";
 const MAX_IMAGE_DIM = 1024;
 
 export default class ImageMediaConverter extends MediaConverter {
-  checkImage(file: Blob): Promise<boolean> {
-    return new Promise<boolean>((resolve) => {
-      createImageBitmap(file)
-        .then((image: ImageBitmap) => {
-          if (image.width > MAX_IMAGE_DIM || image.height > MAX_IMAGE_DIM) {
-            resolve(false);
-          } else {
-            resolve(true);
-          }
-        })
-        .catch(() => {
-          resolve(false);
-        });
-    });
+  async checkImage(file: Blob): Promise<boolean> {
+    const image = await createImageBitmap(file);
+    return image.width <= MAX_IMAGE_DIM && image.height <= MAX_IMAGE_DIM;
   }
   async convert(files: MediaFile[]): Promise<MediaFile[]> {
     const body = new FormData();
 
     for (const file of files) {
       if (!(await this.checkImage(file.data))) {
-        throw Error("not an image");
+        throw Error(`Image ${file.filepath} is too large!`);
       } else {
         body.append(file.filepath, file.data);
       }
@@ -35,9 +24,8 @@ export default class ImageMediaConverter extends MediaConverter {
       body,
     });
     const response = await (await request).json();
-    console.log("fetched");
     if (!this.isMediaResponse(response)) {
-      throw Error("invalid data");
+      throw Error("Invalid Response");
     }
     return this.responseToMediaFileArray(response, "image/t3x");
   }

@@ -10,7 +10,10 @@ import errorSfx from "@assets/sound/error.ogg";
 import useSound from "use-sound";
 import ImageMediaConverter from "./services/converters/ImageMediaConverter";
 import JSZip from "jszip";
-import { MediaFile } from "./services/converters/MediaConverter";
+import MediaConverter, {
+  MediaFile,
+} from "./services/converters/MediaConverter";
+import FontMediaConverter from "./services/converters/FontMediaConverter";
 
 const downloadBlob = (blob: Blob) => {
   const link = document.createElement("a");
@@ -23,10 +26,14 @@ const downloadBlob = (blob: Blob) => {
 const isImageFile = (file: File): boolean =>
   file.type === "image/png" || file.type === "image/jpeg";
 
+const isFontFile = (file: File): boolean =>
+  file.name.endsWith(".ttf") || file.name.endsWith(".otf");
+
 function App() {
   const [playSuccess] = useSound(successSfx);
   const [playError] = useSound(errorSfx);
   const imageConverter = new ImageMediaConverter("/convert/t3x");
+  const fontConverter = new FontMediaConverter("/convert/bcfnt");
 
   const handleUploadSuccess = (response: BundlerResponse) => {
     toast.promise(response.file as Promise<Blob>, {
@@ -50,9 +57,17 @@ function App() {
   };
 
   const handleUpload = async (files: File[]) => {
+    let converter: MediaConverter | undefined;
+    console.log(files[0].type);
     if (isImageFile(files[0])) {
+      converter = imageConverter;
+    } else if (isFontFile(files[0])) {
+      converter = fontConverter;
+    }
+    console.log(converter);
+    if (converter !== undefined) {
       toast.promise(
-        imageConverter.convert(
+        converter.convert(
           files.map((file: File) => ({ filepath: file.name, data: file }))
         ),
         {
@@ -118,7 +133,7 @@ function App() {
       />
       <Flask
         uploadHandler={handleUpload}
-        accept={[".zip", ".png", ".jpg", ".jpeg"]}
+        accept={[".zip", ".png", ".jpg", ".jpeg", ".otf", ".ttf"]}
       />
       <Footer />
     </>
