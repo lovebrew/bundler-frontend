@@ -14,6 +14,7 @@ import MediaConverter, {
   MediaFile,
 } from "./services/converters/MediaConverter";
 import FontMediaConverter from "./services/converters/FontMediaConverter";
+import NawiasConverter from "./services/converters/NawiasConverter";
 
 const downloadBlob = (blob: Blob) => {
   const link = document.createElement("a");
@@ -34,6 +35,7 @@ function App() {
   const [playError] = useSound(errorSfx);
   const imageConverter = new ImageMediaConverter("/convert/t3x");
   const fontConverter = new FontMediaConverter("/convert/bcfnt");
+  const nawiasConverter = new NawiasConverter("/convert/blur");
 
   const handleUploadSuccess = (response: BundlerResponse) => {
     toast.promise(response.file as Promise<Blob>, {
@@ -59,7 +61,11 @@ function App() {
   const handleUpload = async (files: File[]) => {
     let converter: MediaConverter | undefined;
     if (isImageFile(files[0])) {
-      converter = imageConverter;
+      if (files[0].name.toLocaleLowerCase().includes("nawiasblur")) {
+        converter = nawiasConverter;
+      } else {
+        converter = imageConverter;
+      }
     } else if (isFontFile(files[0])) {
       converter = fontConverter;
     }
