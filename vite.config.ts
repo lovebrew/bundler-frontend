@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tsconfigPaths()],
     define: {
-      BASE_URL: JSON.stringify(env.BASE_URL),
+      "process.env.BASE_URL": JSON.stringify(env.BASE_URL),
     },
   };
 });

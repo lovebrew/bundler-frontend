@@ -19,6 +19,7 @@ export default class ImageMediaConverter extends MediaConverter {
     });
   }
   async convert(files: MediaFile[]): Promise<MediaFile[]> {
+    const body = new FormData();
     for (const file of files) {
       await this.checkImage(file.data).then((isValid: boolean) => {
         if (!isValid) {
@@ -28,14 +29,14 @@ export default class ImageMediaConverter extends MediaConverter {
         }
       });
     }
-
-    const body = new FormData();
-    const url = `${import.meta.env.BASE_URL}${this.path}`;
+    const url = `${process.env.BASE_URL}${this.path}`;
+    console.log(url);
     const request = fetch(url, {
       method: "POST",
       body,
     });
     const response = await (await request).json();
+    console.log("fetched");
     if (!this.isMediaResponse(response)) {
       throw Error("invalid data");
     }
