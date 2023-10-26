@@ -29,9 +29,7 @@ export default class ImageMediaConverter extends MediaConverter {
       }
     }
 
-    console.log(body);
     const url = `${process.env.BASE_URL}${this.path}`;
-    console.log(url);
     const request = fetch(url, {
       method: "POST",
       body,
