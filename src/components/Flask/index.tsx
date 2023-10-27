@@ -14,7 +14,7 @@ animate-potionAppear
 `;
 
 const FlaskContainer = tw.div`
-overflow-hidden 
+overflow-hidden
 w-full
 max-h-full
 min-h-[80%]
@@ -95,6 +95,7 @@ function Flask({ uploadHandler, accept }: FlaskProps) {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onChange={handleChange}
+          multiple
         />
       </DropZone>
     </FlaskContainer>

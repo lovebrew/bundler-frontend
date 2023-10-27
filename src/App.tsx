@@ -122,11 +122,10 @@ function App() {
             `
           },
           error: {
-            id: "toaster-error",
             className: `
             bg-red-600
             text-white
-            `,
+            `
           },
         }}
       />
