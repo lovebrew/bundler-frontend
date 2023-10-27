@@ -90,7 +90,7 @@ const bundlerTests: NightwatchTests = {
   "Invalid Textures Uploaded": (browser: NightwatchBrowser) => {
     const bundler = browser.page.bundlerPage();
 
-    testData.invalidTexture.forEach((filename: string) => {
+    testData.invalidTextures.forEach((filename: string) => {
       const filepath = fetch(filename);
 
       const message = `Image ${basename(filename)} is invalid!`;
