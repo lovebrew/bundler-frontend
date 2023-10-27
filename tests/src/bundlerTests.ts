@@ -87,7 +87,7 @@ const bundlerTests: NightwatchTests = {
     browser.end();
   },
 
-  "Invalid Files Uploaded": (browser: NightwatchBrowser) => {
+  "Invalid Textures Uploaded": (browser: NightwatchBrowser) => {
     const bundler = browser.page.bundlerPage();
 
     testData.invalidTexture.forEach((filename: string) => {
@@ -104,9 +104,22 @@ const bundlerTests: NightwatchTests = {
     browser.end();
   },
 
-  "No Texture Data Supplied": (browser: NightwatchBrowser) => {},
-
   // #endregion
+
+  "No File Data Supplied": (browser: NightwatchBrowser) => {
+    const bundler = browser.page.bundlerPage();
+
+    const filepath = fetch("upload/emptyfile");
+
+    const message = `Image ${basename(filepath)} is invalid!`;
+
+    bundler
+      .navigate()
+      .uploadFile("input[type='file']", filepath)
+      .verifyToastMessage(false, message);
+
+    browser.end();
+  },
 };
 
 export default bundlerTests;
