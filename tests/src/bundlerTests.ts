@@ -1,6 +1,6 @@
 import { NightwatchTests, NightwatchBrowser } from "nightwatch";
 import { exec } from "child_process";
-import { resolve } from "path";
+import { resolve, basename } from "path";
 
 import { BundlerPage } from "../pages/bundlerPage";
 
@@ -8,6 +8,10 @@ const directory = __dirname;
 
 function fetch(filename: string) {
   return resolve(`${directory}/../../files/${filename}`);
+}
+
+function filename(filepath: string) {
+  return basename(filepath);
 }
 
 const bundlerTests: NightwatchTests = {
@@ -35,11 +39,14 @@ const bundlerTests: NightwatchTests = {
 
   "Texture Too Big": (browser: NightwatchBrowser) => {
     const bundler = browser.page.bundlerPage();
+    const filepath = fetch("cat_big_both.png");
+
+    const message = `Image ${filename(filepath)} is too large!`;
 
     bundler
       .navigate()
-      .uploadFile("input[type='file']", fetch("cat_big_both.png"))
-      .assertToastMessage(false, "Error");
+      .uploadFile("input[type='file']", filepath)
+      .assertToastMessage(false, message);
 
     browser.end();
   },
