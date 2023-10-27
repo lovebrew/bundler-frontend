@@ -1,0 +1,15 @@
+{
+  "largeTextureBoth": ["upload/cat_big_both.jpg", "upload/cat_big_both.png"],
+  "largeTextureWidth": ["upload/cat_big_width.jpg", "upload/cat_big_width.png"],
+  "largeTextureHeight": [
+    "upload/cat_big_height.jpg",
+    "upload/cat_big_height.png"
+  ],
+  "invalidTextures": [
+    "upload/arial.fnt",
+    "upload/chika.gif",
+    "upload/rectangle.bmp",
+    "upload/rectangle.tga"
+  ],
+  "invalidFonts": ["upload/arial.fnt"]
+}

@@ -6,16 +6,15 @@ import { BundlerPage } from "../pages/bundlerPage";
 
 const directory = __dirname;
 
-function fetch(filename: string) {
-  return resolve(`${directory}/../../files/${filename}`);
+function fetch(filepath: string) {
+  return resolve(`${directory}/../../resources/${filepath}`);
 }
 
-function filename(filepath: string) {
-  return basename(filepath);
-}
+const testDataPath = fetch("data.json");
+const testData = require(testDataPath);
 
 const bundlerTests: NightwatchTests = {
-  before: function () {
+  before: () => {
     exec(
       "flask --app 'lovebrew:create_app(dev=True)' run",
       (error, stdout, stderr) => {
@@ -29,7 +28,7 @@ const bundlerTests: NightwatchTests = {
     );
   },
 
-  "Landing Page Test": (browser: NightwatchBrowser) => {
+  "Landing Page": (browser: NightwatchBrowser) => {
     const bundler = browser.page.bundlerPage();
 
     bundler.navigate().assert.titleContains("LÖVEBrew").end();
@@ -37,19 +36,75 @@ const bundlerTests: NightwatchTests = {
 
   // #region Texture Tests
 
-  "Texture Too Big": (browser: NightwatchBrowser) => {
+  "Texture Dimensions Too Big": (browser: NightwatchBrowser) => {
     const bundler = browser.page.bundlerPage();
-    const filepath = fetch("cat_big_both.png");
 
-    const message = `Image ${filename(filepath)} is too large!`;
+    testData.largeTextureBoth.forEach((filename: string) => {
+      const filepath = fetch(filename);
 
-    bundler
-      .navigate()
-      .uploadFile("input[type='file']", filepath)
-      .assertToastMessage(false, message);
+      const message = `Image ${basename(filename)} is too large!`;
+
+      bundler
+        .navigate()
+        .uploadFile("input[type='file']", filepath)
+        .verifyToastMessage(false, message);
+    });
 
     browser.end();
   },
+
+  "Texture Width Too Big": (browser: NightwatchBrowser) => {
+    const bundler = browser.page.bundlerPage();
+
+    testData.largeTextureWidth.forEach((filename: string) => {
+      const filepath = fetch(filename);
+
+      const message = `Image ${basename(filename)} is too large!`;
+
+      bundler
+        .navigate()
+        .uploadFile("input[type='file']", filepath)
+        .verifyToastMessage(false, message);
+    });
+
+    browser.end();
+  },
+
+  "Texture Height Too Big": (browser: NightwatchBrowser) => {
+    const bundler = browser.page.bundlerPage();
+
+    testData.largeTextureHeight.forEach((filename: string) => {
+      const filepath = fetch(filename);
+
+      const message = `Image ${basename(filename)} is too large!`;
+
+      bundler
+        .navigate()
+        .uploadFile("input[type='file']", filepath)
+        .verifyToastMessage(false, message);
+    });
+
+    browser.end();
+  },
+
+  "Invalid Files Uploaded": (browser: NightwatchBrowser) => {
+    const bundler = browser.page.bundlerPage();
+
+    testData.invalidTexture.forEach((filename: string) => {
+      const filepath = fetch(filename);
+
+      const message = `Image ${basename(filename)} is invalid!`;
+
+      bundler
+        .navigate()
+        .uploadFile("input[type='file']", filepath)
+        .verifyToastMessage(false, message);
+    });
+
+    browser.end();
+  },
+
+  "No Texture Data Supplied": (browser: NightwatchBrowser) => {},
 
   // #endregion
 };

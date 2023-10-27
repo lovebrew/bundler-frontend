@@ -1,14 +1,14 @@
 import { PageObjectModel, EnhancedPageObject } from "nightwatch";
 
 const bundlerCommands = {
-  assertToastMessage(
+  verifyToastMessage(
     this: EnhancedPageObject,
     isSuccess: boolean,
     message: string
   ) {
     const toast = isSuccess ? "@successToast" : "@errorToast";
 
-    return this.waitForElementVisible(toast).assert.textContains(
+    return this.waitForElementVisible(toast).verify.textContains(
       toast,
       message
     );
