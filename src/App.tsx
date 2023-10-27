@@ -119,9 +119,10 @@ function App() {
             className: `
             bg-green-600
             text-white
-            `,
+            `
           },
           error: {
+            id: "toaster-error",
             className: `
             bg-red-600
             text-white

@@ -44,7 +44,7 @@ module.exports = {
 
       screenshots: {
         enabled: false,
-        path: "screens",
+        path: "screenshots",
         on_failure: true,
       },
 
