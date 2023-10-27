@@ -14,3 +14,7 @@ Pull this project and run `npm install` to install all dependencies. Then run `n
 ## Building
 
 To build the project run `npm run build`. The bundled page will be placed in `dist` directory.
+
+# Using NawiasConverter
+
+Drag and drop any image containing words `NawiasBlur` (case-insensitive) to get an _unclear_ response.
