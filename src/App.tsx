@@ -119,13 +119,13 @@ function App() {
             className: `
             bg-green-600
             text-white
-            `,
+            `
           },
           error: {
             className: `
             bg-red-600
             text-white
-            `,
+            `
           },
         }}
       />

@@ -14,7 +14,7 @@ animate-potionAppear
 `;
 
 const FlaskContainer = tw.div`
-overflow-hidden 
+overflow-hidden
 w-full
 max-h-full
 min-h-[80%]
@@ -60,21 +60,25 @@ function Flask({ uploadHandler, accept }: FlaskProps) {
   const handleDragEnter = () => {
     setDragActive(true);
   };
+
   const handleDragLeave = () => {
     setDragActive(false);
   };
+
   const handleDrop = (fileEvent: React.DragEvent<HTMLInputElement>) => {
     fileEvent.preventDefault();
     setDragActive(false);
     const files = Array.from(fileEvent.dataTransfer.files);
     uploadHandler(files);
   };
+
   const handleChange = (fileEvent: React.ChangeEvent<HTMLInputElement>) => {
     fileEvent.preventDefault();
     setDragActive(false);
     // Our input element is of type `file`, so we can be sure it's not null
     const fileList = fileEvent.target.files as FileList;
     const files = Array.from(fileList);
+
     uploadHandler(files);
     fileEvent.target.value = "";
   };
@@ -95,6 +99,7 @@ function Flask({ uploadHandler, accept }: FlaskProps) {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onChange={handleChange}
+          multiple
         />
       </DropZone>
     </FlaskContainer>
