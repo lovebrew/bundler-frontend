@@ -1,16 +1,9 @@
 import JSZip, { JSZipObject } from "jszip";
 import toml from "toml";
 
-/* 256MB */
-const MAX_FILE_SIZE = 256 * 1024 * 1024;
-
 import { convertFiles, isFontFile, isImageFile } from "./utilities";
 
 export async function validateZip(file: File) {
-  if (file.size > MAX_FILE_SIZE) {
-    return Promise.reject("Your archive is too big!");
-  }
-
   const zip = await JSZip.loadAsync(file);
   if (zip.files["lovebrew.toml"] === undefined) {
     return Promise.reject("Missing configuration file.");
