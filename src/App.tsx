@@ -47,6 +47,7 @@ function App() {
         return "Something went wrong!";
       },
     });
+
     return response.message;
   };
 

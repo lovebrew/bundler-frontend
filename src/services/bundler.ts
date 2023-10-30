@@ -5,6 +5,7 @@ import { convertFiles, isFontFile, isImageFile } from "./utilities";
 
 export async function validateZip(file: File) {
   const zip = await JSZip.loadAsync(file);
+
   if (zip.files["lovebrew.toml"] === undefined) {
     return Promise.reject("Missing configuration file.");
   }

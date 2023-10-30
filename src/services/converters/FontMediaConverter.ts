@@ -13,10 +13,12 @@ export default class FontMediaConverter extends MediaConverter {
       method: "POST",
       body,
     });
+
     const response = await (await request).json();
     if (!this.isMediaResponse(response)) {
       throw Error("Invalid Response");
     }
+
     return this.responseToMediaFileArray(response, "font/bcfnt");
   }
 }
