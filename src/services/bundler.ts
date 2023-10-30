@@ -48,8 +48,8 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
 
   const bundle: JSZip = new JSZip();
 
-  let defaultZip: JSZip | undefined;
-  let conversionZip: JSZip | undefined;
+  let defaultZip: JSZip | null = null;
+  let conversionZip: JSZip | null = null;
 
   try {
     config = toml.parse(content);
@@ -153,22 +153,24 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
     const json = await response.json();
     if (json.error) throw Error(json.error);
 
+    let convertedBlob: Blob | null = null;
+    if (conversionZip != null)
+      convertedBlob = await conversionZip.generateAsync({ type: "blob" });
+
+    const defaultBlob = await defaultZip.generateAsync({ type: "blob" });
+
     let gameData: Blob;
 
     for (const key in json) {
       const decoded = await fetch(`data:file/${key};base64,${json[key]}`);
 
-      if (key === "ctr")
-        gameData = (await conversionZip?.generateAsync({
-          type: "blob",
-        })) as Blob;
-      else
-        gameData = (await defaultZip?.generateAsync({ type: "blob" })) as Blob;
+      if (key === "ctr") gameData = convertedBlob as Blob;
+      else gameData = defaultBlob;
 
-      const file = new File([await decoded.blob(), gameData], key);
+      const binary = await decoded.blob();
+      const file = new File([binary, gameData], key);
 
       const keyKey = key as keyof typeof extensions;
-
       bundle.file(`${config.metadata.title}.${extensions[keyKey]}`, file);
     }
 
