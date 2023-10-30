@@ -47,7 +47,9 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
   const content = await zip.files["lovebrew.toml"].async("string");
 
   const bundle: JSZip = new JSZip();
-  let gameZip: JSZip | undefined;
+
+  let defaultZip: JSZip | undefined;
+  let conversionZip: JSZip | undefined;
 
   try {
     config = toml.parse(content);
@@ -85,9 +87,14 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
     let convertedTextures,
       convertedFonts = undefined;
 
-    gameZip = new JSZip();
+    defaultZip = new JSZip();
+    for (const file of files) {
+      defaultZip.file(file.name, file);
+    }
 
     if (config.build.targets.includes("ctr")) {
+      conversionZip = new JSZip();
+
       convertedTextures = await convertFiles(
         files.filter((file: File) => isImageFile(file))
       );
@@ -110,18 +117,12 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
           (name = file.filepath), (data = file.data);
         }
 
-        gameZip.file(name, data);
-      }
-    } else {
-      for (const file of files) {
-        gameZip.file(file.name, file);
+        conversionZip.file(name, data);
       }
     }
   } catch (exception: unknown) {
     throw Error((exception as Error).message);
   }
-
-  const gameData = await gameZip.generateAsync({ type: "blob" });
 
   const body: FormData = new FormData();
   const endpoint = `${process.env.BASE_URL}/compile`;
@@ -152,11 +153,22 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
     const json = await response.json();
     if (json.error) throw Error(json.error);
 
+    let gameData: Blob;
+
     for (const key in json) {
       const decoded = await fetch(`data:file/${key};base64,${json[key]}`);
+
+      if (key === "ctr")
+        gameData = (await conversionZip?.generateAsync({
+          type: "blob",
+        })) as Blob;
+      else
+        gameData = (await defaultZip?.generateAsync({ type: "blob" })) as Blob;
+
       const file = new File([await decoded.blob(), gameData], key);
 
       const keyKey = key as keyof typeof extensions;
+
       bundle.file(`${config.metadata.title}.${extensions[keyKey]}`, file);
     }
 
