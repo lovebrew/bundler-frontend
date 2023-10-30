@@ -21,6 +21,7 @@ export default abstract class MediaConverter {
       "filepath" in response[0]
     );
   }
+
   protected isMediaFile(file: unknown): file is MediaFile {
     return (
       typeof file === "object" &&
@@ -29,6 +30,7 @@ export default abstract class MediaConverter {
       "filepath" in file
     );
   }
+
   protected responseToMediaFileArray(
     response: MediaResponse,
     type: string

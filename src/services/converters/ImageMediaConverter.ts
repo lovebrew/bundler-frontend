@@ -41,14 +41,22 @@ export default class ImageMediaConverter extends MediaConverter {
     }
 
     const url = `${process.env.BASE_URL}${this.path}`;
-    const request = fetch(url, {
-      method: "POST",
-      body,
-    });
-    const response = await (await request).json();
-    if (!this.isMediaResponse(response)) {
-      throw Error("Invalid Response");
+
+    try {
+      const request = fetch(url, {
+        method: "POST",
+        body,
+      });
+
+      const response = await (await request).json();
+
+      if (!this.isMediaResponse(response)) {
+        throw Error(response.toString());
+      }
+
+      return this.responseToMediaFileArray(response, "image/t3x");
+    } catch (exception) {
+      throw Error((exception as Error).message);
     }
-    return this.responseToMediaFileArray(response, "image/t3x");
   }
 }
