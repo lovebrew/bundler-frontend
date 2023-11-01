@@ -8,13 +8,8 @@ export default class FontMediaConverter extends MediaConverter {
       body.append(file.filepath, file.data);
     }
 
-    const url = `${process.env.BASE_URL}${this.path}`;
-    const request = fetch(url, {
-      method: "POST",
-      body,
-    });
+    const response = await this.sendRequest("POST", body);
 
-    const response = await (await request).json();
     if (!this.isMediaResponse(response)) {
       throw Error("Invalid Response");
     }

@@ -1,21 +1,19 @@
 import Flask from "@components/Flask";
 import Footer from "@components/Footer";
-import { validateZip, sendContent, BundlerResponse } from "./services/bundler";
+
+import { sendContent, BundlerResponse } from "./services/bundler";
 import { Toaster, toast } from "react-hot-toast";
+
 import successSfx from "@assets/sound/success.ogg";
 import errorSfx from "@assets/sound/error.ogg";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore Ignore broken library typings
 import useSound from "use-sound";
-import ImageMediaConverter from "./services/converters/ImageMediaConverter";
 import JSZip from "jszip";
-import MediaConverter, {
-  MediaFile,
-} from "./services/converters/MediaConverter";
-import FontMediaConverter from "./services/converters/FontMediaConverter";
 
-import { isZipFile, isImageFile, isFontFile } from "./services/utilities";
+import { MediaFile } from "./services/converters/MediaConverter";
+import { isZipFile, convertFiles, isValidFile } from "./services/utilities";
 
 const downloadBlob = (blob: Blob) => {
   const link = document.createElement("a");
@@ -30,9 +28,6 @@ const downloadBlob = (blob: Blob) => {
 function App() {
   const [playSuccess] = useSound(successSfx);
   const [playError] = useSound(errorSfx);
-
-  const imageConverter = new ImageMediaConverter("/convert/t3x");
-  const fontConverter = new FontMediaConverter("/convert/bcfnt");
 
   const handleUploadSuccess = (response: BundlerResponse) => {
     toast.promise(response.file as Promise<Blob>, {
@@ -59,18 +54,6 @@ function App() {
   };
 
   const handleZipUpload = async (archive: File) => {
-    try {
-      await validateZip(archive);
-    } catch (reason) {
-      playError();
-      if (typeof reason === "string") {
-        toast.error(reason);
-      } else {
-        toast.error("Unknown error");
-      }
-      return;
-    }
-
     toast.promise(sendContent(archive), {
       loading: "Uploading..",
       success: handleUploadSuccess,
@@ -78,47 +61,43 @@ function App() {
     });
   }
 
+  const handleConversions = async (files: File[]) => {
+    toast.promise(
+      convertFiles(files),
+      {
+        loading: "Uploading..",
+        success: (files: MediaFile[]) => {
+          playSuccess();
+          const zip = new JSZip();
+
+          for (const file of files) {
+            zip.file(file.filepath, file.data);
+          }
+
+          zip.generateAsync({type: "blob"}).then((blob: Blob) => downloadBlob(blob));
+          return "Downloaded.";
+        },
+        error: handleUploadError
+      }
+    );
+  }
+
+
   const handleUpload = async (files: File[]) => {
-    let converter: MediaConverter | undefined;
+    try {
+      for (const file of files) {
+        if (file.size == 0) throw Error("Invalid file.");
 
-    for (const file of files) {
-      if (file.size == 0) {
-        toast.error(handleUploadError("Invalid file."));
-        break;
+        if (!isValidFile(file))
+          throw Error("Invalid file type.");
+
+        if (isZipFile(file))
+          handleZipUpload(file);
+        else
+          handleConversions(files);
       }
-
-      if (isZipFile(file)) {
-        handleZipUpload(file);
-        continue;
-      }
-
-      if (isImageFile(file))
-        converter = imageConverter;
-      else if (isFontFile(file))
-        converter = fontConverter;
-
-      if (converter === undefined) {
-        toast.error(handleUploadError("Invalid file type."));
-        break;
-      }
-
-      toast.promise(
-        converter.convert(files.map((file: File) => ({filepath: file.name, data: file}))),
-        {
-          loading: "Uploading..",
-          success: (files: MediaFile[]) => {
-            playSuccess();
-            const zip = new JSZip();
-
-            for (const file of files) {
-              zip.file(file.filepath, file.data);
-            }
-
-            zip.generateAsync({type: "blob"}).then((blob: Blob) => downloadBlob(blob));
-            return "Downloaded.";
-          },
-          error: handleUploadError
-        });
+    } catch (exception) {
+      toast.error(handleUploadError((exception as Error).message));
     }
   }
 

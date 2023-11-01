@@ -1,36 +1,17 @@
 import JSZip, { JSZipObject } from "jszip";
-import toml from "toml";
 
-import { convertFiles, isFontFile, isImageFile } from "./utilities";
-
-export async function validateZip(file: File) {
-  const zip = await JSZip.loadAsync(file);
-
-  if (zip.files["lovebrew.toml"] === undefined) {
-    return Promise.reject("Missing configuration file.");
-  }
-
-  return Promise.resolve();
-}
+import {
+  convertFiles,
+  validateZip,
+  isFontFile,
+  isImageFile,
+  ConfigFile,
+} from "./utilities";
+import { MediaFile } from "./converters/MediaConverter";
 
 export interface BundlerResponse {
   message: string;
   file?: Promise<Blob>;
-}
-
-interface ConfigFile {
-  metadata: {
-    title: string;
-    author: string;
-    description: string;
-    version: string;
-    icons: Record<string, string>;
-  };
-
-  build: {
-    targets: string[];
-    source: string;
-  };
 }
 
 const extensions = {
@@ -39,99 +20,105 @@ const extensions = {
   cafe: "wuhb",
 };
 
-export async function sendContent(archive: File): Promise<BundlerResponse> {
-  const iconFiles: Record<string, Promise<Blob>> = {};
-  let config: ConfigFile;
+async function findDefinedIcons(
+  config: ConfigFile,
+  zip: JSZip
+): Promise<Record<string, Blob>> {
+  const result: Record<string, Blob> = {};
 
-  const zip = await JSZip.loadAsync(archive);
-  const content = await zip.files["lovebrew.toml"].async("string");
+  for (const key in config.metadata.icons) {
+    const path = config.metadata.icons[key];
+    if (zip.file(path) === null) continue;
 
-  const bundle: JSZip = new JSZip();
-
-  let defaultZip: JSZip | null = null;
-  let conversionZip: JSZip | null = null;
-
-  try {
-    config = toml.parse(content);
-
-    // find defined icons
-    for (const key in config.metadata.icons) {
-      if (config.metadata.icons[key] === "") continue;
-
-      const path = config.metadata.icons[key];
-      if (zip.file(path) === null) continue;
-
-      console.log("found icon", key);
-      iconFiles[key] = zip.files[path].async("blob");
-    }
-
-    if (zip.file(new RegExp(`^${config.build.source}/.+`)).length === 0) {
-      return Promise.reject({
-        message: `Source folder '${config.build.source}' not found.`,
-      });
-    }
-
-    const files = await Promise.all(
-      zip
-        .file(new RegExp(`^${config.build.source}/.+`))
-        .map(async (file: JSZipObject) => {
-          console.log(file.name);
-
-          const blob = await file.async("blob");
-          const length = config.build.source.length + 1;
-
-          return new File([blob], file.name.slice(length));
-        })
-    );
-
-    let convertedTextures,
-      convertedFonts = undefined;
-
-    defaultZip = new JSZip();
-    for (const file of files) {
-      defaultZip.file(file.name, file);
-    }
-
-    if (config.build.targets.includes("ctr")) {
-      conversionZip = new JSZip();
-
-      convertedTextures = await convertFiles(
-        files.filter((file: File) => isImageFile(file))
-      );
-
-      convertedFonts = await convertFiles(
-        files.filter((file: File) => isFontFile(file))
-      );
-
-      const main = files.filter(
-        (file: File) => !isImageFile(file) && !isFontFile(file)
-      );
-
-      const converted = [...main, ...convertedTextures, ...convertedFonts];
-
-      for (const file of converted) {
-        let name: string, data: Blob;
-        if (file instanceof File) {
-          (name = file.name), (data = file);
-        } else {
-          (name = file.filepath), (data = file.data);
-        }
-
-        conversionZip.file(name, data);
-      }
-    }
-  } catch (exception: unknown) {
-    throw Error((exception as Error).message);
+    const keyKey = key as keyof ConfigFile["metadata"]["icons"];
+    result[keyKey] = await zip.files[path].async("blob");
   }
+
+  return result;
+}
+
+async function convertCtrFiles(files: File[]): Promise<Array<MediaFile>> {
+  const textures = await convertFiles(
+    files.filter((file: File) => isImageFile(file))
+  );
+
+  const fonts = await convertFiles(
+    files.filter((file: File) => isFontFile(file))
+  );
+
+  const main = files
+    .filter((file: File) => !isImageFile(file) && !isFontFile(file))
+    .map((file: File) => ({ filepath: file.name, data: file }));
+
+  return [...main, ...textures, ...fonts];
+}
+
+async function getSourceFiles(
+  zip: JSZip,
+  source: string
+): Promise<Array<File>> {
+  /* find ALL files within source directory */
+  const files = await Promise.all(
+    zip.file(new RegExp(`^${source}/.+`)).map(async (file: JSZipObject) => {
+      const blob = await file.async("blob");
+      const length = source.length + 1;
+
+      return new File([blob], file.name.slice(length));
+    })
+  );
+
+  return files;
+}
+
+async function fetchGameZip(
+  zip: JSZip,
+  source: string,
+  target: string
+): Promise<JSZip> {
+  const sourceFiles = await getSourceFiles(zip, source);
+
+  let content: Array<MediaFile> = [];
+
+  /* if we have a ctr target, we need to convert the files */
+  if (target === "ctr") {
+    content = await convertCtrFiles(sourceFiles);
+  } else
+    content = sourceFiles.map((file: File) => {
+      return { filepath: file.name, data: file };
+    });
+
+  const gameZip = new JSZip();
+
+  for (const file of content) {
+    gameZip.file(file.filepath, file.data);
+  }
+
+  return gameZip;
+}
+
+export async function sendContent(archive: File): Promise<BundlerResponse> {
+  const [zip, config] = await validateZip(archive);
+
+  const iconFiles = await findDefinedIcons(config, zip);
+  const gameZips: Record<string, JSZip> = {};
+
+  const source = config.build.source;
+  for (const target of config.build.targets) {
+    gameZips[target] = await fetchGameZip(zip, source, target);
+  }
+
+  /* resulting bundle */
+  const bundle: JSZip = new JSZip();
 
   const body: FormData = new FormData();
   const endpoint = `${process.env.BASE_URL}/compile`;
 
+  /* add icons to form data */
   for (const key in iconFiles) {
-    const file = await iconFiles[key];
-    body.append(`icon-${key}`, file);
+    body.append(`icon-${key}`, iconFiles[key]);
   }
 
+  /* create the URL parameters */
   const query: URLSearchParams = new URLSearchParams();
   for (const key of Object.keys(config.metadata)) {
     if (key === "icons") continue;
@@ -141,33 +128,20 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
   }
   query.append("targets", config.build.targets.join(","));
 
-  const request = fetch(`${endpoint}?${query}`, {
-    method: "POST",
-    body,
-  });
-
   try {
+    const request = fetch(`${endpoint}?${query}`, { method: "POST", body });
+
     const response = await request;
-    if (!response.ok) throw Error(response.statusText);
-
     const json = await response.json();
-    if (json.error) throw Error(json.error);
-
-    let convertedBlob: Blob | null = null;
-    if (conversionZip != null)
-      convertedBlob = await conversionZip.generateAsync({ type: "blob" });
-
-    const defaultBlob = await defaultZip.generateAsync({ type: "blob" });
-
-    let gameData: Blob;
 
     for (const key in json) {
       const decoded = await fetch(`data:file/${key};base64,${json[key]}`);
 
-      if (key === "ctr") gameData = convertedBlob as Blob;
-      else gameData = defaultBlob;
-
       const binary = await decoded.blob();
+      const gameData: Blob = await gameZips[key].generateAsync({
+        type: "blob",
+      });
+
       const file = new File([binary, gameData], key);
 
       const keyKey = key as keyof typeof extensions;
@@ -179,6 +153,6 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
       file: bundle.generateAsync({ type: "blob" }),
     };
   } catch (exception) {
-    throw Error((exception as Error).message);
+    return { message: "Failed to send request." };
   }
 }

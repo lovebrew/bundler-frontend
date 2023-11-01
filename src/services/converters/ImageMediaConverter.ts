@@ -16,47 +16,31 @@ class ImageError extends Error {
 
 export default class ImageMediaConverter extends MediaConverter {
   async checkImage(file: Blob): Promise<boolean> {
-    try {
-      const image = await createImageBitmap(file);
-      return image.width <= MAX_IMAGE_DIM && image.height <= MAX_IMAGE_DIM;
-    } catch (error) {
-      throw new ImageError("invalid");
-    }
+    const image = await createImageBitmap(file);
+    return image.width <= MAX_IMAGE_DIM && image.height <= MAX_IMAGE_DIM;
   }
+
   async convert(files: MediaFile[]): Promise<MediaFile[]> {
     const body = new FormData();
 
     for (const file of files) {
       try {
-        if (!(await this.checkImage(file.data))) {
+        if (!(await this.checkImage(file.data)))
           throw new ImageError("too large");
-        } else {
-          body.append(file.filepath, file.data);
-        }
+
+        body.append(file.filepath, file.data);
       } catch (error) {
-        const reason: ImageErrorReason =
-          error instanceof ImageError ? error.reason : "invalid";
+        const reason = error instanceof ImageError ? error.reason : "invalid";
         throw Error(`Image ${file.filepath} is ${reason}!`);
       }
     }
 
-    const url = `${process.env.BASE_URL}${this.path}`;
+    const response = await this.sendRequest("POST", body);
 
-    try {
-      const request = fetch(url, {
-        method: "POST",
-        body,
-      });
-
-      const response = await (await request).json();
-
-      if (!this.isMediaResponse(response)) {
-        throw Error(response.toString());
-      }
-
-      return this.responseToMediaFileArray(response, "image/t3x");
-    } catch (exception) {
-      throw Error((exception as Error).message);
+    if (!this.isMediaResponse(response)) {
+      throw Error(response.toString());
     }
+
+    return this.responseToMediaFileArray(response, "image/t3x");
   }
 }
