@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "supportedBrowsers": "(echo export default && browserslist-useragent-regexp --allowHigherVersions) > supportedBrowsers.js"
   },
   "dependencies": {
     "jszip": "^3.10.1",
@@ -27,6 +28,7 @@
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react-swc": "^3.3.2",
     "autoprefixer": "^10.4.16",
+    "browserslist-useragent-regexp": "^4.1.0",
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",

@@ -1,5 +1,6 @@
 import Flask from "@components/Flask";
 import Footer from "@components/Footer";
+import Banner from "@components/Banner";
 
 import { sendContent, BundlerResponse } from "./services/bundler";
 import { Toaster, toast } from "react-hot-toast";
@@ -103,6 +104,7 @@ function App() {
 
   return (
     <>
+    <Banner />
       <Toaster
         toastOptions={{
           className: `

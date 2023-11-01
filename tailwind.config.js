@@ -31,9 +31,14 @@ export default {
             opacity: 1,
           },
         },
+        fadeIn: {
+          "0%": { opacity: 0 },
+          "100%": { opacity: 1 },
+        },
       },
       animation: {
         potionAppear: "potionAppear 1s ease-out 0s 1",
+        fadeIn: "fadeIn 1s ease-out 0s 1",
       },
       fontFamily: {
         coolvetica: ["coolvetica"],
