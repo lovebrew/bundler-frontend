@@ -4,11 +4,13 @@ const FontTypes = ["font/ttf", "font/otf"];
 import mime from "mime";
 
 export function isImageFile(file: File): boolean {
-  return ImageTypes.includes(mime.getType(file.name));
+  const type: string | null = mime.getType(file.name);
+  return type !== null && ImageTypes.includes(type);
 }
 
 export function isFontFile(file: File): boolean {
-  return FontTypes.includes(mime.getType(file.name));
+  const type: string | null = mime.getType(file.name);
+  return type !== null && FontTypes.includes(type);
 }
 
 export function isZipFile(file: File): boolean {
