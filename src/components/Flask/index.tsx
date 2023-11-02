@@ -14,7 +14,7 @@ animate-potionAppear
 `;
 
 const FlaskContainer = tw.div`
-overflow-hidden 
+overflow-hidden
 w-full
 max-h-full
 min-h-[80%]
@@ -49,32 +49,43 @@ const FileInput = tw.input`
   opacity-0
 `;
 
-type FlaskProps = { uploadHandler: (a: File[]) => void };
+type FlaskProps = {
+  uploadHandler: (a: File[]) => void;
+  accept: string | string[];
+};
 
-function Flask({ uploadHandler }: FlaskProps) {
+function Flask({ uploadHandler, accept }: FlaskProps) {
   const [isDragActive, setDragActive] = useState<boolean>(false);
 
   const handleDragEnter = () => {
     setDragActive(true);
   };
+
   const handleDragLeave = () => {
     setDragActive(false);
   };
+
   const handleDrop = (fileEvent: React.DragEvent<HTMLInputElement>) => {
     fileEvent.preventDefault();
     setDragActive(false);
     const files = Array.from(fileEvent.dataTransfer.files);
     uploadHandler(files);
   };
+
   const handleChange = (fileEvent: React.ChangeEvent<HTMLInputElement>) => {
     fileEvent.preventDefault();
     setDragActive(false);
     // Our input element is of type `file`, so we can be sure it's not null
     const fileList = fileEvent.target.files as FileList;
     const files = Array.from(fileList);
+
     uploadHandler(files);
     fileEvent.target.value = "";
   };
+
+  if (Array.isArray(accept)) {
+    accept = accept.reduce((a, b) => `${a},${b}`);
+  }
 
   return (
     <FlaskContainer>
@@ -83,11 +94,12 @@ function Flask({ uploadHandler }: FlaskProps) {
         <FileInput
           type="file"
           title=""
-          accept=".zip"
+          accept={accept}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onChange={handleChange}
+          multiple
         />
       </DropZone>
     </FlaskContainer>
