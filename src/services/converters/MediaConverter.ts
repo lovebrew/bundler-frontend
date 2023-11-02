@@ -6,9 +6,10 @@ export type MediaResponseFile = {
 export type MediaFile = { data: Blob; filepath: string };
 
 export default abstract class MediaConverter {
-  protected path: string;
+  protected url: string;
+
   constructor(path: string) {
-    this.path = path;
+    this.url = `${process.env.BASE_URL}${path}`;
   }
 
   abstract convert(files: MediaFile[]): Promise<MediaFile[]>;
@@ -21,6 +22,7 @@ export default abstract class MediaConverter {
       "filepath" in response[0]
     );
   }
+
   protected isMediaFile(file: unknown): file is MediaFile {
     return (
       typeof file === "object" &&
@@ -29,6 +31,18 @@ export default abstract class MediaConverter {
       "filepath" in file
     );
   }
+
+  protected async sendRequest(method: string, body: FormData): Promise<any> {
+    try {
+      const request = await fetch(this.url, { method, body });
+      const json = await request.json();
+
+      return json;
+    } catch (exception) {
+      throw Error("Failed to send request.");
+    }
+  }
+
   protected responseToMediaFileArray(
     response: MediaResponse,
     type: string
