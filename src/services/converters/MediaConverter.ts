@@ -9,7 +9,7 @@ export default abstract class MediaConverter {
   protected url: string;
 
   constructor(path: string) {
-    this.url = `${process.env.BASE_URL}${path}`;
+    this.url = `${import.meta.env.DEV ? process.env.BASE_URL : ""}${path}`;
   }
 
   abstract convert(files: MediaFile[]): Promise<MediaFile[]>;
