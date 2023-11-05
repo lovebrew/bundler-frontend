@@ -111,7 +111,7 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
   const bundle: JSZip = new JSZip();
 
   const body: FormData = new FormData();
-  const endpoint = `${process.env.BASE_URL}/compile`;
+  const endpoint = `${import.meta.env.DEV ? process.env.BASE_URL : ""}/compile`;
 
   /* add icons to form data */
   for (const key in iconFiles) {
