@@ -66,7 +66,7 @@ export async function validateZip(file: File): Promise<[JSZip, ConfigFile]> {
 export async function convertFiles(files: File[]): Promise<MediaFile[]> {
   let converter: MediaConverter | undefined = undefined;
 
-  if (files.length === 0) throw Error("No files to convert.");
+  if (files.length === 0) return [];
 
   if (files.every(isImageFile)) {
     converter = imageConverter;
