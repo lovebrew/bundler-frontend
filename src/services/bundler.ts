@@ -153,6 +153,6 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
       file: bundle.generateAsync({ type: "blob" }),
     };
   } catch (exception) {
-    return { message: "Failed to send request." };
+    throw Error("Failed to send request.");
   }
 }
