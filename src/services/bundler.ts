@@ -96,7 +96,7 @@ async function fetchGameZip(
   return gameZip;
 }
 
-export async function sendContent(archive: File): Promise<BundlerResponse> {
+export async function prepareContent(archive: File): Promise<BundlerResponse> {
   const [zip, config] = await validateZip(archive);
 
   const iconFiles = await findDefinedIcons(config, zip);
@@ -110,12 +110,36 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
   /* resulting bundle */
   const bundle: JSZip = new JSZip();
 
+  if (!config.build.packaged) {
+    for (const key in gameZips) {
+      const keyKey = key as keyof typeof extensions;
+      bundle.file(
+        `${config.metadata.title}-${extensions[keyKey]}-assets.zip`,
+        await gameZips[key].generateAsync({ type: "blob" })
+      );
+    }
+
+    return {
+      message: "Success.",
+      file: bundle.generateAsync({ type: "blob" }),
+    };
+  }
+
+  return await sendContent(bundle, config, iconFiles, gameZips);
+}
+
+async function sendContent(
+  bundle: JSZip,
+  config: ConfigFile,
+  icons: Record<string, Blob>,
+  gameZips: Record<string, JSZip>
+) {
   const body: FormData = new FormData();
   const endpoint = `${import.meta.env.DEV ? process.env.BASE_URL : ""}/compile`;
 
   /* add icons to form data */
-  for (const key in iconFiles) {
-    body.append(`icon-${key}`, iconFiles[key]);
+  for (const key in icons) {
+    body.append(`icon-${key}`, icons[key]);
   }
 
   /* create the URL parameters */
