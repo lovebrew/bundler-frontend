@@ -2,7 +2,7 @@ import Flask from "@components/Flask";
 import Footer from "@components/Footer";
 import Banner from "@components/Banner";
 
-import { sendContent, BundlerResponse } from "./services/bundler";
+import { prepareContent, BundlerResponse } from "./services/bundler";
 import { Toaster, toast } from "react-hot-toast";
 
 import successSfx from "@assets/sound/success.ogg";
@@ -55,7 +55,7 @@ function App() {
   };
 
   const handleZipUpload = async (archive: File) => {
-    toast.promise(sendContent(archive), {
+    toast.promise(prepareContent(archive), {
       loading: "Uploading..",
       success: handleUploadSuccess,
       error: handleUploadError,
