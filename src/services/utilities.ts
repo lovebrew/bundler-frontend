@@ -43,6 +43,7 @@ export interface ConfigFile {
   build: {
     targets: string[];
     source: string;
+    packaged?: boolean;
   };
 }
 

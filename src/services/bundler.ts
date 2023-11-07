@@ -110,6 +110,21 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
   /* resulting bundle */
   const bundle: JSZip = new JSZip();
 
+  if (!config.build.packaged) {
+    for (const key in gameZips) {
+      const keyKey = key as keyof typeof extensions;
+      bundle.file(
+        `${config.metadata.title}.${extensions[keyKey]}`,
+        await gameZips[key].generateAsync({ type: "blob" })
+      );
+    }
+
+    return {
+      message: "Success.",
+      file: bundle.generateAsync({ type: "blob" }),
+    };
+  }
+
   const body: FormData = new FormData();
   const endpoint = `${import.meta.env.DEV ? process.env.BASE_URL : ""}/compile`;
 
