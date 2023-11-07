@@ -112,9 +112,8 @@ export async function sendContent(archive: File): Promise<BundlerResponse> {
 
   if (!config.build.packaged) {
     for (const key in gameZips) {
-      const keyKey = key as keyof typeof extensions;
       bundle.file(
-        `${config.metadata.title}.${extensions[keyKey]}`,
+        `${config.metadata.title}-assets.zip`,
         await gameZips[key].generateAsync({ type: "blob" })
       );
     }
