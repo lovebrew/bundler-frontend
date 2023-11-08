@@ -1,5 +1,6 @@
 const ImageTypes = ["image/png", "image/jpeg", "image/jpg"];
 const FontTypes = ["font/ttf", "font/otf"];
+const ZipTypes = ["application/x-zip-compressed", "application/zip"];
 
 import mime from "mime";
 
@@ -14,7 +15,8 @@ export function isFontFile(file: File): boolean {
 }
 
 export function isZipFile(file: File): boolean {
-  return file.type === "application/x-zip-compressed";
+  const type: string | null = mime.getType(file.name);
+  return type != null && ZipTypes.includes(type);
 }
 
 export function isValidFile(file: File): boolean {
