@@ -165,8 +165,10 @@ async function sendContent(
       const gameData: Blob = await gameZips[key].generateAsync({
         type: "blob",
       });
-
-      const file = new File([binary, gameData], key);
+      const combined = await Promise.all(
+        [binary, gameData].map(async (b) => b.arrayBuffer())
+      );
+      const file = new File(combined, key);
 
       const keyKey = key as keyof typeof extensions;
       bundle.file(`${config.metadata.title}.${extensions[keyKey]}`, file);
