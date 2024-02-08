@@ -30,8 +30,8 @@ import MediaConverter, { MediaFile } from "./converters/MediaConverter";
 import JSZip from "jszip";
 import toml from "toml";
 
-const imageConverter = new ImageMediaConverter("/convert/t3x");
-const fontConverter = new FontMediaConverter("/convert/bcfnt");
+const imageConverter = new ImageMediaConverter("/convert");
+const fontConverter = new FontMediaConverter("/convert");
 
 export interface ConfigFile {
   metadata: {
