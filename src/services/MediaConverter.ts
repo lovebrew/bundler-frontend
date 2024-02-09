@@ -3,16 +3,18 @@ export type MediaResponse = {
   log: string;
 };
 
-export type MediaFile = { data: Blob; filepath: string };
+export type MediaFile = {
+  data: Blob;
+  filepath: string;
+};
 
-export default abstract class MediaConverter {
+export default class MediaConverter {
   protected url: string;
+  public log!: File;
 
   constructor(path: string) {
     this.url = `${import.meta.env.DEV ? process.env.BASE_URL : ""}${path}`;
   }
-
-  abstract convert(files: MediaFile[]): Promise<MediaFile[]>;
 
   protected isMediaResponse(response: unknown): response is MediaResponse {
     if (typeof response !== "object" || response === null) {
@@ -42,7 +44,7 @@ export default abstract class MediaConverter {
     );
   }
 
-  protected async sendRequest(method: string, body: FormData): Promise<object> {
+  private async sendRequest(method: string, body: FormData): Promise<object> {
     try {
       const request = await fetch(this.url, { method, body });
       const json = await request.json();
@@ -53,9 +55,25 @@ export default abstract class MediaConverter {
     }
   }
 
+  public async convert(files: MediaFile[]): Promise<MediaFile[]> {
+    const body = new FormData();
+
+    for (const file of files) {
+      body.append(file.filepath, file.data);
+    }
+
+    const response = await this.sendRequest("POST", body);
+
+    if (!this.isMediaResponse(response)) {
+      throw Error("Invalid response from server.");
+    }
+
+    return await this.responseToMediaFileArray(response);
+  }
+
   protected async responseToMediaFileArray(
     response: MediaResponse,
-    type: string
+    type: string = "octet/stream"
   ): Promise<Array<MediaFile>> {
     const mediaFiles: Array<MediaFile> = [];
 
@@ -72,7 +90,7 @@ export default abstract class MediaConverter {
         file = { filepath, data: content };
       } else {
         const content = new Blob([response[key]], { type: "text/plain" });
-        file = { filepath: `convert.log`, data: content };
+        file = { filepath: "convert.log", data: content };
       }
 
       mediaFiles.push(file);

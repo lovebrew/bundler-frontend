@@ -1,122 +1,160 @@
-import JSZip, { JSZipObject } from "jszip";
+import Bundle, { BundleIcons } from "./Bundle";
+import { ConfigMetadata } from "./Config";
 
-import {
-  convertFiles,
-  validateZip,
-  isFontFile,
-  isImageFile,
-  ConfigFile,
-} from "./utilities";
-import { MediaFile } from "./converters/MediaConverter";
+import { convertFiles, isMediaFile, getConversionLog } from "./utilities";
 
-export interface BundlerResponse {
+import JSZip from "jszip";
+
+export type BundlerResponse = {
   message: string;
   file?: Promise<Blob>;
-}
-
-const extensions = {
-  ctr: "3dsx",
-  hac: "nro",
-  cafe: "wuhb",
 };
 
-async function findDefinedIcons(
-  config: ConfigFile,
-  zip: JSZip
-): Promise<Record<string, Blob>> {
-  const result: Record<string, Blob> = {};
+type GameBinary = {
+  [target: string]: Blob;
+};
 
-  for (const key in config.metadata.icons) {
-    const path = config.metadata.icons[key];
-    if (zip.file(path) === null) continue;
+type GameData = {
+  binary: Blob;
+  assets: Blob;
+};
 
-    const keyKey = key as keyof ConfigFile["metadata"]["icons"];
-    result[keyKey] = await zip.files[path].async("blob");
+export default class Bundler {
+  private file: File;
+  public log!: File;
+
+  readonly extensions = {
+    ctr: "3dsx",
+    cafe: "wuhb",
+    hac: "nro",
+  };
+
+  constructor(zip: File) {
+    this.file = zip;
   }
 
-  return result;
-}
+  /**
+   * Generates the game assets for the specified target.
+   * @param target The target to generate assets for.
+   * @param files The files to generate assets from.
+   * @returns {Promise<Blob>} - The generated game assets.
+   */
+  private async getGameAssets(
+    target: string,
+    files: Array<File>,
+    packaged: boolean
+  ): Promise<Blob> {
+    const zip = new JSZip();
 
-async function convertCtrFiles(files: File[]): Promise<Array<MediaFile>> {
-  const textures = await convertFiles(
-    files.filter((file: File) => isImageFile(file))
-  );
+    // things we could convert
+    const filtered = files.filter((file) => isMediaFile(file));
 
-  const fonts = await convertFiles(
-    files.filter((file: File) => isFontFile(file))
-  );
+    // anything not convertable
+    const main = files.filter((file) => !isMediaFile(file));
 
-  const main = files
-    .filter((file: File) => !isImageFile(file) && !isFontFile(file))
-    .map((file: File) => ({ filepath: file.name, data: file }));
+    let result: Array<File> = [];
 
-  return [...main, ...textures, ...fonts];
-}
+    if (target === "ctr") {
+      const converted = await convertFiles(filtered);
+      const data = converted
+        .filter((file) => !file.filepath.endsWith(".log") && packaged)
+        .map((file) => new File([file.data], file.filepath));
 
-async function getSourceFiles(
-  zip: JSZip,
-  source: string
-): Promise<Array<File>> {
-  /* find ALL files within source directory */
-  const files = await Promise.all(
-    zip.file(new RegExp(`^${source}/.+`)).map(async (file: JSZipObject) => {
-      const blob = await file.async("blob");
-      const length = source.length + 1;
+      result = main.concat(data);
+    } else {
+      result = main.concat(filtered);
+    }
 
-      return new File([blob], file.name.slice(length));
-    })
-  );
+    for (const file of result) {
+      zip.file(file.name, file);
+    }
 
-  return files;
-}
-
-async function fetchGameZip(
-  zip: JSZip,
-  source: string,
-  target: string
-): Promise<JSZip> {
-  const sourceFiles = await getSourceFiles(zip, source);
-
-  let content: Array<MediaFile> = [];
-
-  /* if we have a ctr target, we need to convert the files */
-  if (target === "ctr") {
-    content = await convertCtrFiles(sourceFiles);
-  } else
-    content = sourceFiles.map((file: File) => {
-      return { filepath: file.name, data: file };
-    });
-
-  const gameZip = new JSZip();
-
-  for (const file of content) {
-    gameZip.file(file.filepath, file.data);
+    return await zip.generateAsync({ type: "blob" });
   }
 
-  return gameZip;
-}
+  /**
+   * Prepares the content for bundling by:
+   * 1. Validating the bundle.
+   * 2. Finding all defined icons.
+   * 3. Fetching the game content for each target.
+   *   • This includes converting the content for the CTR target.
+   * 4. Sending the content to the server.
+   * @returns {Promise<BundlerResponse>} - The response from the server.
+   */
+  public async prepareContent(): Promise<BundlerResponse> {
+    const bundle = new Bundle(this.file);
+    await bundle.validate();
 
-export async function prepareContent(archive: File): Promise<BundlerResponse> {
-  const [zip, config] = await validateZip(archive);
+    const icons = await bundle.findDefinedIcons();
+    console.log(icons);
 
-  const iconFiles = await findDefinedIcons(config, zip);
-  const gameZips: Record<string, JSZip> = {};
+    const targets = bundle.getTargets();
+    console.log(targets);
 
-  const source = config.build.source;
-  for (const target of config.build.targets) {
-    gameZips[target] = await fetchGameZip(zip, source, target);
+    const files = await bundle.getSourceFiles();
+    const packaged = bundle.isPackaged();
+
+    const data: Map<string, GameData> = new Map();
+
+    for (const target of targets) {
+      const assets = await this.getGameAssets(target, files, packaged);
+      data.set(target, { binary: new Blob(), assets });
+    }
+
+    if (!packaged) return this.bundleContentLoose(data);
+
+    const metadata = bundle.getMetadata();
+    const binaries = await this.sendCompile(targets, icons, metadata);
+
+    for (const target of targets) {
+      data.get(target)!.binary = binaries.get(target)!;
+    }
+
+    const name = bundle.getMetadata().title;
+    return await this.bundleContent(name, data);
   }
 
-  /* resulting bundle */
-  const bundle: JSZip = new JSZip();
+  private async bundleContentLoose(
+    data: Map<string, GameData>
+  ): Promise<BundlerResponse> {
+    const bundle = new JSZip();
+    console.log("CONTENT IS LOOSE", data);
 
-  if (!config.build.packaged) {
-    for (const key in gameZips) {
-      const keyKey = key as keyof typeof extensions;
-      bundle.file(
-        `${config.metadata.title}-${extensions[keyKey]}-assets.zip`,
-        await gameZips[key].generateAsync({ type: "blob" })
+    for (const [key, value] of data) {
+      console.log("bundling loose file", key);
+      bundle.file(`${key}-assets.zip`, value.assets);
+    }
+
+    const files = bundle.generateAsync({ type: "blob" });
+    return { message: "Success.", file: files };
+  }
+
+  /**
+   * Bundles the game content.
+   * @param content The game content to bundle.
+   * @returns {Promise<BundlerResponse>} - The response from the server.
+   */
+  private async bundleContent(
+    name: string,
+    content: Map<string, GameData>
+  ): Promise<BundlerResponse> {
+    const bundle: JSZip = new JSZip();
+
+    for (const [key, value] of content) {
+      const binary = value.binary;
+      const assets = value.assets;
+
+      const file = new File(
+        [binary, assets],
+        `${name}.${this.extensions[key as keyof typeof this.extensions]}`
       );
+      bundle.file(file.name, file);
+    }
+
+    bundle.file("compile.log", this.log);
+
+    if (getConversionLog() !== null) {
+      bundle.file("convert.log", getConversionLog()!);
     }
 
     return {
@@ -125,58 +163,68 @@ export async function prepareContent(archive: File): Promise<BundlerResponse> {
     };
   }
 
-  return await sendContent(bundle, config, iconFiles, gameZips);
-}
+  /**
+   * Sends the metadata to the server for compilation.
+   * @param targets The targets to compile for.
+   * @param icons The icons to use.
+   * @param metadata The metadata to use.
+   */
+  private async sendCompile(
+    targets: Array<string>,
+    icons: BundleIcons,
+    metadata: ConfigMetadata
+  ): Promise<Map<string, Blob>> {
+    const content = new Map<string, Blob>();
 
-async function sendContent(
-  bundle: JSZip,
-  config: ConfigFile,
-  icons: Record<string, Blob>,
-  gameZips: Record<string, JSZip>
-) {
-  const body: FormData = new FormData();
-  const endpoint = `${import.meta.env.DEV ? process.env.BASE_URL : ""}/compile`;
+    // append the icons as FormData
 
-  /* add icons to form data */
-  for (const key in icons) {
-    body.append(`icon-${key}`, icons[key]);
-  }
+    const body = new FormData();
+    for (const [target, blob] of Object.entries(icons)) {
+      body.append(`icon-${target}`, blob);
+    }
 
-  /* create the URL parameters */
-  const query: URLSearchParams = new URLSearchParams();
-  for (const key of Object.keys(config.metadata)) {
-    if (key === "icons") continue;
+    const url = `${import.meta.env.DEV ? process.env.BASE_URL : ""}`;
+    const endpoint = `${url}/compile`;
 
-    const keyKey = key as keyof ConfigFile["metadata"];
-    query.append(key, config.metadata[keyKey] as string);
-  }
-  query.append("targets", config.build.targets.join(","));
+    // create the URL parameters
 
-  try {
-    const request = fetch(`${endpoint}?${query}`, { method: "POST", body });
+    const query = new URLSearchParams();
+    for (const [key, value] of Object.entries(metadata)) {
+      if (key === "icons") continue;
+      query.append(key, String(value));
+    }
+    query.append("targets", targets.join(","));
 
-    const response = await request;
-    const json = await response.json();
+    try {
+      // send the request
 
-    for (const key in json) {
-      const decoded = await fetch(`data:file/${key};base64,${json[key]}`);
-
-      const binary = await decoded.blob();
-      const gameData: Blob = await gameZips[key].generateAsync({
-        type: "blob",
+      const response = await fetch(`${endpoint}?${query.toString()}`, {
+        method: "POST",
+        body: body,
       });
 
-      const file = new File([binary, gameData], key);
+      const json = await response.json();
+      console.log(json);
 
-      const keyKey = key as keyof typeof extensions;
-      bundle.file(`${config.metadata.title}.${extensions[keyKey]}`, file);
+      // process the response
+
+      for (const [key, value] of Object.entries(json)) {
+        if (key !== "log") {
+          const decoded = await fetch(`data:file/${key};base64,${value}`);
+          const data = await decoded.blob();
+
+          const file = new File([data], key);
+          console.log(key);
+          content.set(key, file);
+        } else {
+          const content = new Blob([value as BlobPart], { type: "text/plain" });
+          this.log = new File([content], "log.txt");
+        }
+      }
+
+      return content;
+    } catch (error) {
+      throw new Error("Failed to send request");
     }
-
-    return {
-      message: "Success.",
-      file: bundle.generateAsync({ type: "blob" }),
-    };
-  } catch (exception) {
-    throw Error("Failed to send request.");
   }
 }

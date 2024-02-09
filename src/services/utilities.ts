@@ -14,6 +14,10 @@ export function isFontFile(file: File): boolean {
   return type !== null && FontTypes.includes(type);
 }
 
+export function isMediaFile(file: File): boolean {
+  return isImageFile(file) || isFontFile(file);
+}
+
 export function isZipFile(file: File): boolean {
   const type: string | null = mime.getType(file.name);
   return type != null && ZipTypes.includes(type);
@@ -23,63 +27,32 @@ export function isValidFile(file: File): boolean {
   return isImageFile(file) || isFontFile(file) || isZipFile(file);
 }
 
-import ImageMediaConverter from "./converters/ImageMediaConverter";
-import FontMediaConverter from "./converters/FontMediaConverter";
-import MediaConverter, { MediaFile } from "./converters/MediaConverter";
+import MediaConverter, { MediaFile } from "./MediaConverter";
 
-import JSZip from "jszip";
-import toml from "toml";
+const converter = new MediaConverter("/convert");
 
-const imageConverter = new ImageMediaConverter("/convert");
-const fontConverter = new FontMediaConverter("/convert");
+const MAX_IMAGE_DIM = 0x400;
 
-export interface ConfigFile {
-  metadata: {
-    title: string;
-    author: string;
-    description: string;
-    version: string;
-    icons: Record<string, string>;
-  };
-
-  build: {
-    targets: string[];
-    source: string;
-    packaged?: boolean;
-  };
+export async function validateTexture(file: Blob): Promise<boolean> {
+  const image = await createImageBitmap(file);
+  return image.width <= MAX_IMAGE_DIM && image.height <= MAX_IMAGE_DIM;
 }
 
-export async function validateZip(file: File): Promise<[JSZip, ConfigFile]> {
-  const zip = await JSZip.loadAsync(file);
+export async function validateFont(file: Blob): Promise<boolean> {
+  const font = new FontFace("test", await file.arrayBuffer());
+  await font.load();
 
-  if (zip.files["lovebrew.toml"] === undefined) {
-    throw Error("Missing configuration file.");
-  }
-
-  const content = await zip.files["lovebrew.toml"].async("string");
-  const config = toml.parse(content);
-
-  if (zip.file(new RegExp(`^${config.build.source}/.+`)).length === 0) {
-    throw Error(`Source folder '${config.build.source}' not found.`);
-  }
-
-  return [zip, config];
+  return true;
 }
 
 export async function convertFiles(files: File[]): Promise<MediaFile[]> {
-  let converter: MediaConverter | undefined = undefined;
-
-  if (files.length === 0) return [];
-
-  if (files.every(isImageFile)) {
-    converter = imageConverter;
-  } else if (files.every(isFontFile)) {
-    converter = fontConverter;
-  } else {
-    throw Error("Files are not all the same type.");
-  }
+  if (files.length === 0) return Array<MediaFile>();
 
   return await converter.convert(
     files.map((file: File) => ({ filepath: file.name, data: file }))
   );
+}
+
+export function getConversionLog(): File {
+  return converter.log;
 }

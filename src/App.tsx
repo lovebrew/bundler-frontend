@@ -2,7 +2,7 @@ import Flask from "@components/Flask";
 import Footer from "@components/Footer";
 import Banner from "@components/Banner";
 
-import { prepareContent, BundlerResponse } from "./services/bundler";
+import Bundler, { BundlerResponse } from "./services/Bundler";
 import { Toaster, toast } from "react-hot-toast";
 
 import successSfx from "@assets/sound/success.ogg";
@@ -13,7 +13,7 @@ import errorSfx from "@assets/sound/error.ogg";
 import useSound from "use-sound";
 import JSZip from "jszip";
 
-import { MediaFile } from "./services/converters/MediaConverter";
+import { MediaFile } from "./services/MediaConverter";
 import { isZipFile, convertFiles, isValidFile } from "./services/utilities";
 
 const downloadBlob = (blob: Blob) => {
@@ -55,7 +55,9 @@ function App() {
   };
 
   const handleZipUpload = async (archive: File) => {
-    toast.promise(prepareContent(archive), {
+    const bundler = new Bundler(archive);
+
+    toast.promise(bundler.prepareContent(), {
       loading: "Uploading..",
       success: handleUploadSuccess,
       error: handleUploadError,
