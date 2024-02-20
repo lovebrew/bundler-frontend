@@ -60,7 +60,7 @@ export async function validate(file: MediaFile): Promise<boolean> {
 
   if (ImageTypes.includes(type)) {
     if (!(await validateTexture(file.data)))
-      throw Error("Texture exceeds maximum dimensions.");
+      throw Error(`Texture '${file.filepath}' is too large.`);
     else return true;
   }
 
