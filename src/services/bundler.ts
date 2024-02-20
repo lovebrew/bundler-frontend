@@ -10,10 +10,6 @@ export type BundlerResponse = {
   file?: Promise<Blob>;
 };
 
-type GameBinary = {
-  [target: string]: Blob;
-};
-
 type GameData = {
   binary: Blob;
   assets: Blob;
@@ -56,11 +52,16 @@ export default class Bundler {
 
     if (target === "ctr") {
       const converted = await convertFiles(filtered);
-      const data = converted
-        .filter((file) => !file.filepath.endsWith(".log") && packaged)
-        .map((file) => new File([file.data], file.filepath));
+      const data = converted.map(
+        (file) => new File([file.data], file.filepath)
+      );
 
       result = main.concat(data);
+
+      if (packaged) {
+        const log = data.findIndex((file) => file.name.endsWith(".log"));
+        result.splice(log, 1);
+      }
     } else {
       result = main.concat(filtered);
     }
@@ -118,7 +119,6 @@ export default class Bundler {
     data: Map<string, GameData>
   ): Promise<BundlerResponse> {
     const bundle = new JSZip();
-    console.log("CONTENT IS LOOSE", data);
 
     for (const [key, value] of data) {
       console.log("bundling loose file", key);

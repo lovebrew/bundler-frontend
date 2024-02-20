@@ -1,3 +1,5 @@
+import { validate } from "./utilities";
+
 export type MediaResponse = {
   [key: string]: string;
   log: string;
@@ -59,6 +61,9 @@ export default class MediaConverter {
     const body = new FormData();
 
     for (const file of files) {
+      if (!(await validate(file))) {
+        throw Error("Invalid file.");
+      }
       body.append(file.filepath, file.data);
     }
 
