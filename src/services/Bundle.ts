@@ -27,10 +27,11 @@ export default class Bundle {
    * Validates the bundle
    * @returns {Promise<boolean>} - Whether the file is a valid bundle.
    */
-  public async validate() {
+  public async validate(): Promise<boolean> {
     this.zip = await JSZip.loadAsync(this.file);
 
     const data = await this.zip.file(this.ConfigName)?.async("string");
+
     if (data === undefined) {
       throw Error("Missing configuration file.");
     }
@@ -41,6 +42,8 @@ export default class Bundle {
     if (this.zip.file(new RegExp(`^${source}/.+`)).length === 0) {
       throw Error(`Source folder '${source}' not found.`);
     }
+
+    return true;
   }
 
   /**

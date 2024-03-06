@@ -87,10 +87,7 @@ export default class Bundler {
     await bundle.validate();
 
     const icons = await bundle.findDefinedIcons();
-    console.log(icons);
-
     const targets = bundle.getTargets();
-    console.log(targets);
 
     const files = await bundle.getSourceFiles();
     const packaged = bundle.isPackaged();
@@ -115,6 +112,12 @@ export default class Bundler {
     return await this.bundleContent(name, data);
   }
 
+  /**
+   * Bundles the game content for loose files
+   *  • This is used when the game is not packaged
+   * @param data The game content to bundle.
+   * @returns {Promise<BundlerResponse>} - The response from the server.
+   */
   private async bundleContentLoose(
     data: Map<string, GameData>
   ): Promise<BundlerResponse> {
@@ -130,7 +133,8 @@ export default class Bundler {
   }
 
   /**
-   * Bundles the game content.
+   * Bundles the game content for packaged files.
+   * • This is used when the game is bundled into a single file.
    * @param content The game content to bundle.
    * @returns {Promise<BundlerResponse>} - The response from the server.
    */

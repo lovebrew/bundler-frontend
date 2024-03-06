@@ -33,23 +33,23 @@ const converter = new MediaConverter("/convert");
 
 const MAX_IMAGE_DIM = 0x400;
 
-export async function validateTexture(file: Blob): Promise<boolean> {
+export async function validateTexture(file: MediaFile): Promise<boolean> {
   try {
-    const image = await createImageBitmap(file);
+    const image = await createImageBitmap(file.data);
     return image.width <= MAX_IMAGE_DIM && image.height <= MAX_IMAGE_DIM;
   } catch (exception) {
-    throw Error("Invalid texture.");
+    throw Error(`Texture '${file.filepath}' is invalid.`);
   }
 }
 
-export async function validateFont(file: Blob): Promise<boolean> {
+export async function validateFont(file: MediaFile): Promise<boolean> {
   try {
-    const font = new FontFace("test", await file.arrayBuffer());
+    const font = new FontFace("test", await file.data.arrayBuffer());
     await font.load();
 
     return true;
   } catch (exception) {
-    throw Error("Invalid font.");
+    throw Error(`Font '${file.filepath}' is invalid.`);
   }
 }
 
@@ -59,13 +59,13 @@ export async function validate(file: MediaFile): Promise<boolean> {
   if (type === null) return false;
 
   if (ImageTypes.includes(type)) {
-    if (!(await validateTexture(file.data)))
+    if (!(await validateTexture(file)))
       throw Error(`Texture '${file.filepath}' is too large.`);
     else return true;
   }
 
   if (FontTypes.includes(type)) {
-    return await validateFont(file.data);
+    return await validateFont(file);
   }
 
   return false;
